@@ -6,27 +6,26 @@ import com.br.ccs.mark.version.on.ccsmark.model.Cliente;
 import com.br.ccs.mark.version.on.ccsmark.model.ContaCliente;
 import com.br.ccs.mark.version.on.ccsmark.repository.ClienteRepository;
 import com.br.ccs.mark.version.on.ccsmark.service.CcsService;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
-@Controller
+@RestController
 public class CcsController {
 
     @Autowired
@@ -42,19 +41,16 @@ public class CcsController {
 
     @GetMapping("/listaCliente")
     @Cacheable(value = "cliente")
-    @ResponseBody
     public Iterable<Cliente> obterClientes() {
         return ccsService.obterTodosClientes();
     }
 
     @GetMapping("/listaContas")
-    @ResponseBody
     public Iterable<ContaCliente> obterContas() {
         return ccsService.obterTodasContas();
     }
 
     @GetMapping("/gerarRelatorio/{dataAtualizacao}")
-    @ResponseBody
     public ResponseEntity<List<ContaCliente>> gerarRelatorio(@PathVariable("dataAtualizacao") @DateTimeFormat(pattern = "yyyy-MM-dd") Date dataAtualizacao) throws IOException {
         List<ContaCliente> contaClienteList = ccsService.pesquisarPorData(dataAtualizacao);
         ccsService.escreverArquivo(contaClienteList, dataAtualizacao);
@@ -62,7 +58,6 @@ public class CcsController {
     }
 
     @GetMapping("/gerarRelatorio")
-    @ResponseBody
     public ResponseEntity<List<ContaCliente>> gerarRelatorioDiario() throws IOException {
         List<ContaCliente> contaClienteList = ccsService.pesquisarPorData(new Date());
         ccsService.escreverArquivo(contaClienteList, new Date());
@@ -70,7 +65,6 @@ public class CcsController {
     }
 
     @GetMapping("/gerarRelatorioCompleto")
-    @ResponseBody
     public ResponseEntity<List<ContaCliente>> gerarRelatorioCompleto() throws IOException {
         List<ContaCliente> contaClienteList = (List<ContaCliente>) ccsService.obterTodasContas();
         ccsService.escreverArquivoTodo(contaClienteList);
@@ -79,7 +73,6 @@ public class CcsController {
 
     @GetMapping("/clientedto")
     @Cacheable(value = "clientedto")
-    @ResponseBody
     public List<ClienteDto> lista() {
         Iterable<Cliente> clienteDtos = obterClientes();
         return ClienteDto.converter((List<Cliente>) clienteDtos);
@@ -87,10 +80,13 @@ public class CcsController {
 
     @GetMapping("/contaclientedto")
     @Cacheable(value = "contaclientedto")
-    @ResponseBody
     public List<ContaClienteDto> listaconta() {
         Iterable<ContaCliente> clienteDtos = obterContas();
         return ContaClienteDto.converter((List<ContaCliente>) clienteDtos);
     }
 
+    @GetMapping("/enviarParaOKafka")
+    public void producerKafka() {
+        ccsService.enviarPeloKafka();
+    }
 }

@@ -5,7 +5,13 @@ import com.br.ccs.mark.version.on.ccsmark.model.Cliente;
 import com.br.ccs.mark.version.on.ccsmark.model.ContaCliente;
 import com.br.ccs.mark.version.on.ccsmark.repository.ClienteRepository;
 import com.br.ccs.mark.version.on.ccsmark.repository.ContaClienteRepository;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -14,12 +20,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Date;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 @Service
+@EnableScheduling
 public class CcsService {
 
     @Autowired
@@ -125,4 +129,42 @@ public class CcsService {
         timer.scheduleAtFixedRate(tarefa, 0, SEGUNDOS);
     }
 
+
+    Timer timer = new Timer();
+    final long MINUTOS = (5000 * 60);
+
+    @Scheduled(fixedDelay = MINUTOS)
+    public void enviarPeloKafka(){
+
+        String bootstrapServers = "127.0.0.1:9092";
+        // create Producer properties
+        Properties properties = new Properties();
+        properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+        // create the producer
+        KafkaProducer<Cliente, String> producer = new KafkaProducer<>(properties);
+
+        // create a producer record
+        ProducerRecord<Cliente, String> record;
+
+        List<Cliente> contaClienteList = clienteRepository.findAll();
+
+        for (Cliente cliente : contaClienteList) {
+            record = new ProducerRecord<>("ccs_mark", cliente.toString());
+            producer.send(record);
+        }
+
+        System.out.println("-------------------------------------------------------");
+//        record = new ProducerRecord<>("two_topic", cliente.toString());
+
+        // send data - asynchronous
+//        producer.send(record);
+
+        // flush data
+        producer.flush();
+        // flush and close producer
+        producer.close();
+    }
 }
