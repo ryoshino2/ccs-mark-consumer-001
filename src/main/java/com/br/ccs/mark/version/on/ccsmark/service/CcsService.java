@@ -2,6 +2,7 @@ package com.br.ccs.mark.version.on.ccsmark.service;
 
 
 import com.br.ccs.mark.version.on.ccsmark.model.Cliente;
+import com.br.ccs.mark.version.on.ccsmark.model.ClienteSerializer;
 import com.br.ccs.mark.version.on.ccsmark.model.ContaCliente;
 import com.br.ccs.mark.version.on.ccsmark.repository.ClienteRepository;
 import com.br.ccs.mark.version.on.ccsmark.repository.ContaClienteRepository;
@@ -14,17 +15,16 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 @Service
 @EnableScheduling
 public class CcsService {
+
+    private final long MINUTOS = (5000 * 60);
 
     @Autowired
     private final ClienteRepository clienteRepository;
@@ -78,23 +78,12 @@ public class CcsService {
 
         BufferedWriter bufferedWriter = new BufferedWriter(arquivo);
         bufferedWriter.write("CPF;NOME;SALDO");
-        for (int j = 0; j < contaClienteList.size(); j++) {
+        for (ContaCliente contaCliente : contaClienteList) {
             bufferedWriter.newLine();
-            bufferedWriter.write(j + " - " + contaClienteList.get(j).getIdCliente().getNome() + ";");
+            bufferedWriter.write(contaCliente.getIdCliente().getNome() + ";");
         }
 
         bufferedWriter.close();
-    }
-
-    private void contarLinha() {
-        try {
-            String file = ("./relatorioTransacao25-7-119.txt");
-            BufferedReader readFile = Files.newBufferedReader(Paths.get(file));
-            System.out.println(readFile.lines().toArray().length);
-            readFile.close();
-        } catch (IOException e) {
-            System.out.println("Erro ao abrir o arquivo: " + e.getMessage());
-        }
     }
 
     private boolean verificarSaldo(ContaCliente contaCliente) {
@@ -105,33 +94,6 @@ public class CcsService {
         contaClienteRepository.save(contaCliente);
     }
 
-    public void automatizarTarefa(Date dataAtualizacao) {
-        Timer timer = new Timer();
-        final long SEGUNDOS = (2000 * 10);
-
-//        Calendar c = Calendar.getInstance();
-//        c.setTime(dataAtualizacao);
-//        c.add(Calendar.DATE, +1);
-//        dataAtualizacao = c.getTime();
-//        Date finalDataAtualizacao = dataAtualizacao;
-
-        TimerTask tarefa = new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    escreverArquivo(pesquisarPorData(dataAtualizacao), dataAtualizacao);
-                    System.out.println(dataAtualizacao);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        timer.scheduleAtFixedRate(tarefa, 0, SEGUNDOS);
-    }
-
-
-    Timer timer = new Timer();
-    final long MINUTOS = (5000 * 60);
 
     @Scheduled(fixedDelay = MINUTOS)
     public void enviarPeloKafka(){
@@ -141,18 +103,18 @@ public class CcsService {
         Properties properties = new Properties();
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ClienteSerializer.class.getName());
 
         // create the producer
-        KafkaProducer<Cliente, String> producer = new KafkaProducer<>(properties);
+        KafkaProducer<String, Cliente> producer = new KafkaProducer<>(properties);
 
         // create a producer record
-        ProducerRecord<Cliente, String> record;
+        ProducerRecord<String, Cliente> record;
 
         List<Cliente> contaClienteList = clienteRepository.findAll();
 
         for (Cliente cliente : contaClienteList) {
-            record = new ProducerRecord<>("ccs_mark", cliente.toString());
+            record = new ProducerRecord<>("ccs_mark", cliente);
             producer.send(record);
         }
 
