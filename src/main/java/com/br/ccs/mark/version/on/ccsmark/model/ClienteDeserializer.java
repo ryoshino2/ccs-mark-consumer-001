@@ -5,7 +5,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 
 import java.util.Map;
 
-public class ClienteDeserializer implements Deserializer<Cliente> {
+public class ClienteDeserializer implements Deserializer<ClienteKafka> {
 
 
     @Override
@@ -14,11 +14,11 @@ public class ClienteDeserializer implements Deserializer<Cliente> {
     }
 
     @Override
-    public Cliente deserialize(String arg0, byte[] arg1) {
+    public ClienteKafka deserialize(String arg0, byte[] arg1) {
         ObjectMapper mapper = new ObjectMapper();
-        Cliente cliente = null;
+        ClienteKafka cliente = null;
         try {
-            cliente = mapper.readValue(arg1, Cliente.class);
+            cliente = mapper.readValue(arg1, ClienteKafka.class);
         } catch (Exception e) {
 
             e.printStackTrace();
