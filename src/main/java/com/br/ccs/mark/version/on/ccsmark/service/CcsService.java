@@ -1,6 +1,5 @@
 package com.br.ccs.mark.version.on.ccsmark.service;
 
-
 import com.br.ccs.mark.version.on.ccsmark.controller.CcsController;
 import com.br.ccs.mark.version.on.ccsmark.model.ClienteKafka;
 import com.br.ccs.mark.version.on.ccsmark.repository.ClienteKafkaRepository;
@@ -20,25 +19,25 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 
 @Service
 @EnableScheduling
 public class CcsService {
 
     private final long MINUTOS = (1000 * 60);
-
+    private final CcsKafka kafkaProperties = new CcsKafka();
+    private final String topic = "ccs_mark";
     @Autowired
     private ClienteKafkaRepository clienteKafkaRepository;
 
-    private final CcsKafka kafkaProperties = new CcsKafka();
+    public CcsService(ClienteKafkaRepository clienteKafkaRepository) {
+        this.clienteKafkaRepository = clienteKafkaRepository;
+    }
 
     @Scheduled(fixedDelay = MINUTOS)
     public void consumirPeloKafkaAssincrono() throws IOException {
         Logger logger = LoggerFactory.getLogger(CcsController.class.getName());
-
-        String bootstrapServers = "127.0.0.1:9092";
-        String groupId = "my-fourth-application";
-        String topic = "ccs_mark";
 
         // create consumer configs
         kafkaProperties.configurationKafka().setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
@@ -50,37 +49,15 @@ public class CcsService {
         consumer.subscribe(Arrays.asList(topic));
 
         // poll for new data
-        FileWriter arquivo = new FileWriter("relatorioTransacao_Kafka");
-        BufferedWriter bufferedWriter = new BufferedWriter(arquivo);
-        bufferedWriter.write("CPF;NOME");
-        ConsumerRecords<String, ClienteKafka> records;
+        BufferedWriter bufferedWriter = getBufferedWriter(logger, consumer);
+        consumer.commitSync();
 
-        records = consumer.poll(Duration.ofMinutes(1)); // new in Kafka 2.0.0
-        logger.info("Received: " + records.count());
-
-            for (ConsumerRecord<String, ClienteKafka> record : records) {
-                bufferedWriter.flush();
-                logger.info("Value: " + record.value());
-                logger.info("Valor:" + record.toString().toUpperCase());
-                bufferedWriter.newLine();
-                bufferedWriter.write(record.value().getIdCliente() + ", " + record.value().getNome() + ";");
-                clienteKafkaRepository.save(record.value());
-            }
-            consumer.commitSync();
-
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            bufferedWriter.close();
-            consumer.close();
+        bufferedWriter.close();
+        consumer.close();
     }
 
     public void consumirSincrono() throws IOException {
         Logger logger = LoggerFactory.getLogger(CcsController.class.getName());
-
-        String topic = "ccs_mark";
 
         // create consumer
         KafkaConsumer<String, ClienteKafka> consumer = new KafkaConsumer<>(kafkaProperties.configurationKafka());
@@ -89,21 +66,36 @@ public class CcsService {
         consumer.subscribe(Arrays.asList(topic));
 
         // poll for new data
+        BufferedWriter bufferedWriter = getBufferedWriter(logger, consumer);
+        bufferedWriter.close();
+        consumer.close();
+    }
+
+    private BufferedWriter getBufferedWriter(Logger logger, KafkaConsumer<String, ClienteKafka> consumer) throws IOException {
         FileWriter arquivo = new FileWriter("relatorioTransacao_Kafka");
         BufferedWriter bufferedWriter = new BufferedWriter(arquivo);
         bufferedWriter.write("CPF;NOME");
         ConsumerRecords<String, ClienteKafka> records;
 
         records = consumer.poll(Duration.ofMinutes(1)); // new in Kafka 2.0.0
+        logger.info("Received: " + records.count());
+
         for (ConsumerRecord<String, ClienteKafka> record : records) {
             bufferedWriter.flush();
             logger.info("Value: " + record.value());
+            logger.info("Valor:" + record.toString().toUpperCase());
             bufferedWriter.newLine();
             bufferedWriter.write(record.value().getIdCliente() + ", " + record.value().getNome() + ";");
             clienteKafkaRepository.save(record.value());
-
         }
-        bufferedWriter.close();
-        consumer.close();
+        return bufferedWriter;
+    }
+
+    public void salvarCliente(ClienteKafka clienteKafka) {
+        clienteKafkaRepository.save(clienteKafka);
+    }
+
+    public List<ClienteKafka> listarClientes() {
+        return clienteKafkaRepository.findAll();
     }
 }

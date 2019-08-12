@@ -16,18 +16,12 @@ public class ClienteKafka {
     private Integer idCliente;
 
     private String nome;
-
     private String endereco;
-
     private Integer telefone;
-
     private String email;
-
     private Integer cpf;
-
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date dataAtualizacao;
-
 
     public ClienteKafka(Integer idCliente, String nome, String endereco, Integer telefone, String email, Integer cpf, Date dataAtualizacao) {
         this.idCliente = idCliente;
