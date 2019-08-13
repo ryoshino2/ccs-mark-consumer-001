@@ -72,7 +72,7 @@ public class CcsService {
     }
 
     private BufferedWriter getBufferedWriter(Logger logger, KafkaConsumer<String, ClienteKafka> consumer) throws IOException {
-        FileWriter arquivo = new FileWriter("relatorioTransacao_Kafka");
+        FileWriter arquivo = new FileWriter("src/relatorioTransacao_Kafka.txt");
         BufferedWriter bufferedWriter = new BufferedWriter(arquivo);
         bufferedWriter.write("CPF;NOME");
         ConsumerRecords<String, ClienteKafka> records;
