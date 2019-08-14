@@ -1,7 +1,6 @@
 package com.br.ccs.mark.version.on.ccsmark.controller;
 
 import com.br.ccs.mark.version.on.ccsmark.model.ClienteKafka;
-import com.br.ccs.mark.version.on.ccsmark.repository.ClienteKafkaRepository;
 import com.br.ccs.mark.version.on.ccsmark.service.CcsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,12 +14,13 @@ import java.util.List;
 
 @RestController
 public class CcsController {
-
-    @Autowired
-    private ClienteKafkaRepository clienteKafkaRepository;
-
     @Autowired
     private CcsService ccsService;
+
+    public CcsController(CcsService ccsService) {
+        this.ccsService = ccsService;
+    }
+
 
     @GetMapping
     public ModelAndView index() {
@@ -38,8 +38,8 @@ public class CcsController {
     }
 
     @GetMapping("/clienteKafka")
-    public ResponseEntity<List<ClienteKafka>> listarClientes() {
-        List<ClienteKafka> contaClienteList = clienteKafkaRepository.findAll();
-        return ResponseEntity.status(HttpStatus.OK).body(contaClienteList);
+    public List<ClienteKafka> listarClientes() {
+        List<ClienteKafka> contaClienteList = ccsService.listarClientes();
+        return contaClienteList;
     }
 }

@@ -1,4 +1,4 @@
-package com.br.ccs.mark.version.on.ccsmark.teste.steps;
+package com.br.ccs.mark.version.on.ccsmark.steps;
 
 import com.br.ccs.mark.version.on.ccsmark.CcsmarkApplication;
 import com.br.ccs.mark.version.on.ccsmark.model.ClienteKafka;

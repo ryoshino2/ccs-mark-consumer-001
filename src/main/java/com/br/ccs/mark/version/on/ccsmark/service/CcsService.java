@@ -1,6 +1,5 @@
 package com.br.ccs.mark.version.on.ccsmark.service;
 
-import com.br.ccs.mark.version.on.ccsmark.controller.CcsController;
 import com.br.ccs.mark.version.on.ccsmark.model.ClienteKafka;
 import com.br.ccs.mark.version.on.ccsmark.repository.ClienteKafkaRepository;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -37,7 +36,7 @@ public class CcsService {
 
     @Scheduled(fixedDelay = MINUTOS)
     public void consumirPeloKafkaAssincrono() throws IOException {
-        Logger logger = LoggerFactory.getLogger(CcsController.class.getName());
+        Logger logger = LoggerFactory.getLogger(CcsService.class.getName());
 
         // create consumer configs
         kafkaProperties.configurationKafka().setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
@@ -57,7 +56,7 @@ public class CcsService {
     }
 
     public void consumirSincrono() throws IOException {
-        Logger logger = LoggerFactory.getLogger(CcsController.class.getName());
+        Logger logger = LoggerFactory.getLogger(CcsService.class.getName());
 
         // create consumer
         KafkaConsumer<String, ClienteKafka> consumer = new KafkaConsumer<>(kafkaProperties.configurationKafka());
