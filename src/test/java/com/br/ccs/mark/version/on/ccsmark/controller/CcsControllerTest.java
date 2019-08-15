@@ -67,4 +67,20 @@ public class CcsControllerTest {
                 .andExpect(jsonPath("$[0]['email']").value(clienteKafka.getEmail()));
     }
 
+    @Test
+    public void deveRetornarListaDeClientesVazia() throws Exception {
+
+        //criando objeto esperado de resposta
+        List<ClienteKafka> clienteKafkaList = new ArrayList<>();
+
+        //determinando o retorno do serviço
+        when(ccsController.listarClientes()).thenReturn(clienteKafkaList);
+
+        //testando
+        mockMvc.perform(get("/clienteKafka")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(hasSize(0)));
+    }
+
 }
