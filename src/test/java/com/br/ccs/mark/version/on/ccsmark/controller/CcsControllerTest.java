@@ -80,7 +80,7 @@ public class CcsControllerTest {
         mockMvc.perform(get("/clienteKafka")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").value(hasSize(1)));
+                .andExpect(jsonPath("$").value(hasSize(0)));
     }
 
 }
