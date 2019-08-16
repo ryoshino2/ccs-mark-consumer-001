@@ -4,9 +4,9 @@ node {
       git 'https://github.com/ryoshino2/ccs-mark-consumer-001.git'
    }
    stage('Test') {
-            sh 'mvn test'
+            sh './mvnw test'
       }
     stage('Build'){
-            sh 'mvn package'
+            sh './mvnw package'
     }
 }
